@@ -1,0 +1,13 @@
+Minecraft Server Launcher
+Copyright 2025 Sparky
+
+This product includes software developed by
+The Apache Software Foundation (http://www.apache.org/).
+
+This product uses the following third-party libraries:
+- TornadoFX (https://tornadofx.io/)
+- ControlsFX (https://controlsfx.github.io/)
+- SnakeYAML (https://bitbucket.org/snakeyaml/snakeyaml/)
+- Kotlin Coroutines (https://github.com/Kotlin/kotlinx.coroutines)
+
+See the LICENSE file for more information.

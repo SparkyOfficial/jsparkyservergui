@@ -1,0 +1,94 @@
+# Конфигурация приложения Minecraft Server Launcher
+
+# Основные настройки
+app:
+  theme: dark  # dark или light
+  language: ru
+  check_updates: true
+  auto_save_logs: true
+  max_log_lines: 1000
+  
+# Настройки сервера
+server:
+  default_directory: ""
+  java_path: "java"
+  min_memory: 2048
+  max_memory: 4096
+  java_args: >
+    -XX:+UseG1GC -XX:+ParallelRefProcEnabled -XX:MaxGCPauseMillis=200 
+    -XX:+UnlockExperimentalVMOptions -XX:+DisableExplicitGC 
+    -XX:+AlwaysPreTouch -XX:G1NewSizePercent=30 -XX:G1MaxNewSizePercent=40 
+    -XX:G1HeapRegionSize=32M -XX:G1ReservePercent=20 -XX:G1HeapWastePercent=5 
+    -XX:G1MixedGCCountTarget=4 -XX:InitiatingHeapOccupancyPercent=15 
+    -XX:G1MixedGCLiveThresholdPercent=90 -XX:G1RSetUpdatingPauseTimePercent=5 
+    -XX:SurvivorRatio=32 -XX:+PerfDisableSharedMem -XX:MaxTenuringThreshold=1 
+    -Dusing.aikars.flags=https://mcflags.emc.gs -Daikars.new.flags=true
+
+# Настройки интерфейса
+ui:
+  window_width: 1200
+  window_height: 800
+  console_font_size: 14
+  show_line_numbers: true
+  auto_scroll: true
+  
+# Настройки уведомлений
+notifications:
+  enabled: true
+  sound_enabled: true
+  join_notifications: true
+  leave_notifications: true
+  
+# Настройки консоли
+console:
+  font_family: "Consolas"
+  font_size: 14
+  show_timestamps: true
+  
+# Настройки темы (расширенные)
+theme:
+  primary_color: "#2E7D32"
+  secondary_color: "#1B5E20"
+  accent_color: "#69F0AE"
+  background_dark: "#1E1E1E"
+  background_light: "#F5F5F5"
+  text_dark: "#212121"
+  text_light: "#F5F5F5"
+  
+# Настройки сервера по умолчанию
+server_settings:
+  view_distance: 10
+  simulation_distance: 10
+  online_mode: true
+  pvp: true
+  difficulty: "easy"
+  allow_nether: true
+  enable_command_block: false
+  enable_query: false
+  enable_rcon: false
+  max_players: 20
+  motd: "Minecraft Server"
+  
+# Настройки бекапов
+backup:
+  enabled: true
+  directory: "backups"
+  interval: 3600  # в секундах
+  max_backups: 10
+  
+# Настройки плагинов
+plugins:
+  auto_update: true
+  update_interval: 86400  # в секундах (1 день)
+  
+# Настройки обновлений
+updates:
+  check_on_startup: true
+  check_interval: 86400  # в секундах (1 день)
+  
+# Настройки логирования
+logging:
+  level: "INFO"
+  file: "logs/launcher.log"
+  max_size: 10485760  # 10MB
+  max_files: 5

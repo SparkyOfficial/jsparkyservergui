@@ -1,0 +1,120 @@
+# Maven target directory
+target/
+
+# IntelliJ IDEA
+.idea/
+*.iml
+*.iws
+*.ipr
+out/
+
+# VSCode
+.vscode/
+
+# Log files
+*.log
+logs/
+
+# Minecraft server files
+server/
+!server/eula.txt
+
+# Local configuration
+config.yml
+
+# Build outputs
+app/
+.jpackage/
+
+# OS specific
+.DS_Store
+Thumbs.db
+
+# Local configuration files
+.local/
+*.local
+
+# Executables
+*.exe
+*.dll
+*.so
+*.dylib
+
+# Temp files
+*.tmp
+*.temp
+*.bak
+*.swp
+*~
+
+# Maven wrapper
+.mvn/wrapper/maven-wrapper.jar
+
+# Maven wrapper properties
+.mvn/wrapper/maven-wrapper.properties
+
+# Maven local repository
+.m2/
+
+# Maven build info
+.mvn/timing-*.json
+
+# Maven wrapper downloader
+.mvn/wrapper/maven-wrapper.jar.sha1
+
+# Maven wrapper properties
+.mvn/wrapper/maven-wrapper.properties
+
+# Maven wrapper downloader script
+.mvn/wrapper/maven-wrapper-downloader.jar
+
+# Maven wrapper downloader script checksum
+.mvn/wrapper/maven-wrapper-downloader.jar.sha1
+
+# Maven wrapper downloader script checksum
+.mvn/wrapper/maven-wrapper-downloader.jar.md5
+
+# Maven wrapper downloader script checksum
+.mvn/wrapper/maven-wrapper-downloader.jar.sha256
+
+# Maven wrapper downloader script checksum
+.mvn/wrapper/maven-wrapper-downloader.jar.sha512
+
+# Maven wrapper downloader script checksum
+.mvn/wrapper/maven-wrapper-downloader.jar.sha384
+
+# Maven wrapper downloader script checksum
+.mvn/wrapper/maven-wrapper-downloader.jar.sha256sum
+
+# Maven wrapper downloader script checksum
+.mvn/wrapper/maven-wrapper-downloader.jar.sha512sum
+
+# Maven wrapper downloader script checksum
+.mvn/wrapper/maven-wrapper-downloader.jar.sha384sum
+
+# Maven wrapper downloader script checksum
+.mvn/wrapper/maven-wrapper-downloader.jar.md5sum
+
+# Maven wrapper downloader script checksum
+.mvn/wrapper/maven-wrapper-downloader.jar.sha1sum
+
+# Maven wrapper downloader script checksum
+.mvn/wrapper/maven-wrapper-downloader.jar.sha224sum
+
+# Maven wrapper downloader script checksum
+.mvn/wrapper/maven-wrapper-downloader.jar.sha384sum
+
+# Maven wrapper downloader script checksum
+.mvn/wrapper/maven-wrapper-downloader.jar.sha512sum
+
+# Maven wrapper downloader script checksum
+.mvn/wrapper/maven-wrapper-downloader.jar.sha256sum
+
+# Maven wrapper downloader script checksum
+.mvn/wrapper/maven-wrapper-downloader.jar.sha1sum
+
+# Maven wrapper downloader script checksum
+.mvn/wrapper/maven-wrapper-downloader.jar.md5sum
+
+# Maven wrapper downloader script checksum
+.mvn/wrapper/maven-wrapper-downloader.jar.sha224sum
