@@ -143,16 +143,8 @@
         <groupId>org.panteleyev</groupId>
         <artifactId>jpackage-maven-plugin</artifactId>
         <version>1.5.1</version>
-        <executions>
-          <execution>
-            <id>package</id>
-            <phase>package</phase>
-            <goals>
-              <goal>jpackage</goal>
-            </goals>
-          </execution>
-        </executions>
         <configuration>
+          <skip>true</skip>
           <name>MinecraftServerLauncher</name>
           <appVersion>${project.version}</appVersion>
           <vendor>Minecraft</vendor>
