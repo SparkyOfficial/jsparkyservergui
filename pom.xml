@@ -198,6 +198,13 @@
                     <mainClass>com.minecraft.mcserverlauncher.AppKt</mainClass>
                     <launcher>app</launcher>
                     <jlinkZipName>app</jlinkZipName>
+                    <jlinkArgs>
+                        <arg>--strip-debug</arg>
+                        <arg>--compress</arg>
+                        <arg>2</arg>
+                        <arg>--no-header-files</arg>
+                        <arg>--no-man-pages</arg>
+                    </jlinkArgs>
                     <jlinkImageName>app</jlinkImageName>
                     <noManPages>true</noManPages>
                     <stripDebug>true</stripDebug>
@@ -230,6 +237,49 @@
                     </execution>
                 </executions>
             </plugin>
+
+            <!-- JPackage Maven Plugin -->
+            <plugin>
+                <groupId>org.panteleyev</groupId>
+                <artifactId>jpackage-maven-plugin</artifactId>
+                <version>1.5.1</version>
+                <executions>
+                    <execution>
+                        <id>package</id>
+                        <phase>package</phase>
+                        <goals>
+                            <goal>jpackage</goal>
+                        </goals>
+                    </execution>
+                </executions>
+                <configuration>
+                    <name>MinecraftServerLauncher</name>
+                    <appVersion>${project.version}</appVersion>
+                    <vendor>Minecraft</vendor>
+                    <description>${project.description}</description>
+                    <copyright>© 2023 Minecraft. All rights reserved.</copyright>
+                    <icon>${project.basedir}/src/main/resources/icon.ico</icon>
+                    <destination>${project.basedir}/target/jpackage</destination>
+                    <temp>${project.build.directory}/jpackage-temp</temp>
+                    <modulePaths>
+                        <modulePath>${project.build.directory}/modules</modulePath>
+                    </modulePaths>
+                    <mainClass>com.minecraft.mcserverlauncher.AppKt</mainClass>
+                    <runtimeImage>${project.build.directory}/jlinkbase</runtimeImage>
+                    <type>exe</type>
+                    <imageType>exe</imageType>
+                    <winMenu>true</winMenu>
+                    <winShortcut>true</winShortcut>
+                    <winDirChooser>true</winDirChooser>
+                    <winMenuGroup>Minecraft</winMenuGroup>
+                    <winUpgradeUuid>a8f5c2b4-1234-5678-90ab-cdef12345678</winUpgradeUuid>
+                    <winConsole>true</winConsole>
+                    <javaOptions>
+                        <option>-Dfile.encoding=UTF-8</option>
+                        <option>-Xmx2G</option>
+                    </javaOptions>
+                </configuration>
+            </plugin>
         </plugins>
 
         <resources>
@@ -248,6 +298,13 @@
             </resource>
         </resources>
     </build>
+
+    <pluginRepositories>
+        <pluginRepository>
+            <id>jpackage-maven-plugin-repo</id>
+            <url>https://repo1.maven.org/maven2/</url>
+        </pluginRepository>
+    </pluginRepositories>
 
     <repositories>
         <repository>
