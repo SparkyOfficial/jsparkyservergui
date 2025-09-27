@@ -11,15 +11,13 @@
     <testSourceDirectory>${project.basedir}/src/test/kotlin</testSourceDirectory>
     <resources>
       <resource>
-        <filtering>true</filtering>
-        <directory>src/main/resources</directory>
-      </resource>
-      <resource>
         <targetPath>${project.build.outputDirectory}</targetPath>
         <filtering>true</filtering>
-        <directory>${project.basedir}</directory>
+        <directory>src/main/resources</directory>
         <includes>
-          <include>config.example.yml</include>
+          <include>**/*.css</include>
+          <include>**/*.fxml</include>
+          <include>**/*.properties</include>
         </includes>
       </resource>
     </resources>

@@ -290,20 +290,16 @@
                 </configuration>
             </plugin>
         </plugins>
-
         <resources>
             <resource>
                 <directory>src/main/resources</directory>
                 <filtering>true</filtering>
-            </resource>
-            <!-- Copy config.example.yml to config.yml in the resources directory -->
-            <resource>
-                <directory>${project.basedir}</directory>
                 <includes>
-                    <include>config.example.yml</include>
+                    <include>**/*.css</include>
+                    <include>**/*.fxml</include>
+                    <include>**/*.properties</include>
                 </includes>
                 <targetPath>${project.build.outputDirectory}</targetPath>
-                <filtering>true</filtering>
             </resource>
         </resources>
     </build>
