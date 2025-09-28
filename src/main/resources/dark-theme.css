@@ -243,6 +243,128 @@
     -fx-text-fill: #e0e0e0;
 }
 
+/* Стили для графиков мониторинга */
+.chart {
+    -fx-background-color: #1e1e2e;
+    -fx-padding: 10px;
+}
+
+.chart-plot-background {
+    -fx-background-color: #2a2a3a;
+    -fx-border-color: #3c3f41;
+}
+
+.chart-title {
+    -fx-text-fill: #e0e0e0;
+    -fx-font-size: 14px;
+    -fx-font-weight: bold;
+}
+
+.axis {
+    -fx-tick-label-fill: #a0a0a0;
+    -fx-tick-mark-visible: true;
+}
+
+.axis-label {
+    -fx-text-fill: #e0e0e0;
+}
+
+.chart-series-line {
+    -fx-stroke-width: 2px;
+}
+
+.default-color0.chart-series-line { -fx-stroke: #6a5acd; }
+.default-color1.chart-series-line { -fx-stroke: #ff6b6b; }
+.default-color2.chart-series-line { -fx-stroke: #4ecdc4; }
+
+.default-color0.chart-line-symbol { -fx-background-color: #6a5acd, white; }
+.default-color1.chart-line-symbol { -fx-background-color: #ff6b6b, white; }
+.default-color2.chart-line-symbol { -fx-background-color: #4ecdc4, white; }
+
+/* Стили для таблиц с метриками */
+.table-view {
+    -fx-background-color: #2a2a3a;
+    -fx-table-cell-border-color: transparent;
+    -fx-table-header-border-color: transparent;
+}
+
+.table-view .column-header {
+    -fx-background-color: #3a3a4a;
+    -fx-border-color: transparent transparent #4a4a5a transparent;
+}
+
+.table-view .column-header .label {
+    -fx-text-fill: #e0e0e0;
+    -fx-font-weight: bold;
+}
+
+.table-row-cell {
+    -fx-background-color: #2a2a3a;
+    -fx-text-fill: #e0e0e0;
+}
+
+.table-row-cell:odd {
+    -fx-background-color: #252535;
+}
+
+.table-row-cell:selected {
+    -fx-background-color: #4a4a6a;
+    -fx-text-fill: white;
+}
+
+.table-view .table-cell {
+    -fx-border-color: transparent;
+    -fx-padding: 5px;
+}
+
+/* Стили для вкладок */
+.tab-pane {
+    -fx-background-color: #2a2a3a;
+    -fx-tab-min-width: 120px;
+}
+
+.tab {
+    -fx-background-color: #3a3a4a;
+    -fx-background-insets: 0 1 0 1, 1 1 0 0, 2 0 0 0;
+    -fx-background-radius: 5px 5px 0 0;
+    -fx-padding: 5 15 5 15;
+}
+
+.tab:selected {
+    -fx-background-color: #4a4a6a;
+}
+
+.tab-label {
+    -fx-text-fill: #e0e0e0;
+    -fx-font-weight: bold;
+}
+
+/* Стили для разделителя */
+.split-pane {
+    -fx-background-color: #2a2a3a;
+}
+
+.split-pane-divider {
+    -fx-background-color: #3c3f41;
+    -fx-padding: 0 1 0 1;
+}
+
+/* Стили для индикаторов загрузки */
+.progress-indicator {
+    -fx-progress-color: #6a5acd;
+}
+
+/* Стили для подсказок */
+.tooltip {
+    -fx-background-color: #3a3a4a;
+    -fx-text-fill: #e0e0e0;
+    -fx-font-size: 12px;
+    -fx-padding: 5px;
+    -fx-background-radius: 3px;
+    -fx-border-color: #4a4a5a;
+    -fx-border-radius: 3px;
+}
+
 .combo-box-popup .list-view {
     -fx-background-color: #3c3f41;
 }

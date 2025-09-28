@@ -1,10 +1,11 @@
 package com.minecraft.mcserverlauncher.view
 
+import com.minecraft.mcserverlauncher.view.components.LoadInfoView
+import com.minecraft.mcserverlauncher.view.components.MetricsCharts
 import com.minecraft.mcserverlauncher.viewmodel.ServerManagerViewModel
 import javafx.geometry.Pos
 import javafx.scene.control.*
 import javafx.scene.layout.*
-import javafx.scene.paint.Color
 import tornadofx.*
 
 /**
@@ -201,85 +202,110 @@ class MainView : View("Minecraft Server Launcher") {
                 }
             }
             
+            // Вкладка мониторинга
+            tab("Мониторинг") {
+                isClosable = false
+                
+                splitpane(orientation = javafx.geometry.Orientation.VERTICAL) {
+                    // Верхняя часть - графики
+                    add(MetricsCharts())
+                    
+                    // Нижняя часть - информация о загрузке
+                    add(LoadInfoView())
+                    
+                    // Настройка разделителя
+                    setDividerPositions(0.7)
+                }
+            }
+            
             // Вкладка быстрых команд
             tab("Быстрые команды") {
                 isClosable = false
                 
-                gridpane {
-                    vgap = 10.0
-                    hgap = 10.0
-                    padding = insets(10)
-                    
-                    var row = 0
-                    var col = 0
-                    
-                    // Отображаем быстрые команды в виде сетки
-                    viewModel.quickCommands.forEach { cmd ->
-                        button(cmd.name) {
-                            maxWidth = Double.MAX_VALUE
-                            
-                            // Добавляем иконку, если она есть
-                            if (cmd.icon.isNotBlank()) {
-                                graphic = label(cmd.name) {
-                                    graphic = svgicon(cmd.icon, 16.0)
+                vbox {
+                    flowpane(hgap = 10.0, vgap = 10.0) {
+                        for (cmd in viewModel.quickCommands) {
+                            button(cmd.name) {
+                                graphic = if (cmd.icon.isNotBlank()) {
+                                    stackpane {
+                                        addClass("icon-${cmd.icon}")
+                                    }
+                                } else null
+                                
+                                tooltip(cmd.description)
+                                
+                                action {
+                                    viewModel.sendCommand(cmd.command)
                                 }
+                                
+                                prefWidth = 150.0
                             }
-                            
-                            // Добавляем подсказку с описанием команды
-                            tooltip(cmd.description)
-                            
-                            // Обработка нажатия
-                            action {
-                                viewModel.sendCommand(cmd.command)
-                            }
-                        }
-                        
-                        // Размещаем кнопки в сетке 3xN
-                        add(this, col, row)
-                        col++
-                        if (col >= 3) {
-                            col = 0
-                            row++
                         }
                     }
                 }
             }
         }
         
-        // Нижний статус-бар
-        bottom = hbox(spacing = 10, padding = insets(5)) {
-            style {
-                backgroundColor += c("#2a2a3a")
-            }
+        // Нижний колонтитул с информацией о загрузке
+        bottom = hbox(spacing = 15, padding = insets(5)) {
+            addClass("status-bar")
             
-            label("Статус: ") {
-                style {
-                    textFill = Color.WHITE
-                }
-            }
-            
-            label {
-                textProperty().bind(
-                    when {
-                        viewModel.serverStarting.get() -> "Запуск сервера..."
-                        viewModel.serverStopping.get() -> "Остановка сервера..."
-                        viewModel.serverRunning.get() -> "Сервер запущен"
-                        else -> "Сервер остановлен"
-                    }
-                )
+            // Информация о загрузке
+            hbox(spacing = 15) {
+                addClass("status-info")
                 
-                style {
-                    textFill = when {
-                        viewModel.serverStarting.get() -> Color.ORANGE
-                        viewModel.serverStopping.get() -> Color.ORANGE
-                        viewModel.serverRunning.get() -> Color.LIMEGREEN
-                        else -> Color.GRAY
+                // CPU
+                hbox(spacing = 3) {
+                    label("CPU:")
+                    label {
+                        bind(stringBinding(viewModel.metrics.cpuUsage) { "%.1f%%".format(this ?: 0.0) })
+                        style {
+                            textFill = c("#ffffff")
+                            fontWeight = FontWeight.BOLD
+                        }
+                    }
+                }
+                
+                // Память
+                hbox(spacing = 3) {
+                    label("Память:")
+                    label {
+                        bind(
+                            stringBinding(
+                                viewModel.metrics.usedMemory,
+                                viewModel.metrics.maxMemory
+                            ) { 
+                                val used = (viewModel.metrics.usedMemory.get() / 1024.0 / 1024.0).toInt()
+                                val max = (viewModel.metrics.maxMemory.get() / 1024.0 / 1024.0).toInt()
+                                "$used/$max MB" 
+                            }
+                        )
+                        style {
+                            textFill = c("#ffffff")
+                            fontWeight = FontWeight.BOLD
+                        }
+                    }
+                }
+                
+                // TPS
+                hbox(spacing = 3) {
+                    label("TPS:")
+                    label(viewModel.tps) {
+                        style {
+                            textFill = when {
+                                viewModel.tps.get().toDoubleOrNull() ?: 20.0 < 15.0 -> c("#ff4444")
+                                viewModel.tps.get().toDoubleOrNull() ?: 20.0 < 18.0 -> c("#ffbb33")
+                                else -> c("#99cc00")
+                            }
+                            fontWeight = FontWeight.BOLD
+                        }
                     }
                 }
             }
             
             region { hgrow = Priority.ALWAYS }
             
+            // Ссылка на GitHub
             hyperlink("GitHub") {
                 action {
                     hostServices.showDocument("https://github.com/yourusername/mcserverlauncher")
@@ -290,10 +316,47 @@ class MainView : View("Minecraft Server Launcher") {
     
     init {
         // Настройка размера окна
-        primaryStage.width = 1000.0
-        primaryStage.height = 700.0
+        primaryStage.width = 1200.0
+        primaryStage.height = 800.0
         
         // Загружаем иконку приложения
         primaryStage.icons.add(resources.image("/icon.png"))
+        
+        // Обновляем информацию в статус-баре при изменении метрик
+        viewModel.metrics.lastUpdated.addListener { _, _, _ ->
+            updateStatusBar()
+        }
     }
-}
+    
+    /**
+     * Обновление информации в статус-баре
+     */
+    private fun updateStatusBar() {
+        val metrics = viewModel.metrics
+        
+        // Находим элементы управления в статус-баре
+        val statusBar = root.bottom as? HBox ?: return
+        val statusInfo = statusBar.lookup(".status-info") as? HBox ?: return
+        
+        // CPU
+        val cpuLabel = statusInfo.children[0] as? Label
+        cpuLabel?.text = "CPU: ${String.format("%.1f", metrics.cpuUsage.get())}%"
+        
+        // Память
+        val memoryLabel = statusInfo.children[1] as? Label
+        val usedMB = metrics.usedMemory.get() / 1024.0 / 1024.0
+        val maxMB = metrics.maxMemory.get() / 1024.0 / 1024.0
+        memoryLabel?.text = "Память: ${String.format("%.1f", usedMB)}/${String.format("%.1f", maxMB)} MB"
+        
+        // TPS
+        val tpsLabel = statusInfo.children[2] as? Label
+        val tpsValue = metrics.tps.get()
+        tpsLabel?.text = "TPS: ${String.format("%.1f", tpsValue)}"
+        
+        // Изменяем цвет TPS в зависимости от значения
+        tpsLabel?.style = when {
+            tpsValue < 15.0 -> "-fx-text-fill: #ff4444; -fx-font-weight: bold;"
+            tpsValue < 18.0 -> "-fx-text-fill: #ffbb33; -fx-font-weight: bold;"
+            else -> "-fx-text-fill: #99cc00; -fx-font-weight: bold;"
+        }
+    }

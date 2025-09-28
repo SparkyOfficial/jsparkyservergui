@@ -1,13 +1,18 @@
 package com.minecraft.mcserverlauncher.viewmodel
 
 import com.minecraft.mcserverlauncher.model.QuickCommand
+import com.minecraft.mcserverlauncher.model.ServerMetrics
 import com.minecraft.mcserverlauncher.model.ServerSettings
+import javafx.animation.KeyFrame
+import javafx.animation.Timeline
 import javafx.application.Platform
 import javafx.beans.property.*
 import javafx.collections.FXCollections
 import javafx.collections.ObservableList
+import javafx.util.Duration
 import tornadofx.*
 import java.io.File
+import java.lang.management.ManagementFactory
 import java.nio.file.Files
 import java.nio.file.Paths
 import java.nio.file.StandardCopyOption
@@ -46,6 +51,19 @@ class ServerManagerViewModel : ViewModel() {
     // История команд
     private val commandHistory = mutableListOf<String>()
     private var commandHistoryIndex = -1
+    
+    // Метрики сервера
+    val metrics = ServerMetrics()
+    
+    // Таймер для обновления метрик
+    private val metricsTimer = Timeline(
+        KeyFrame(Duration.seconds(1.0)) {
+            updateMetrics()
+        }
+    ).apply {
+        cycleCount = javafx.animation.Animation.INDEFINITE
+        play()
+    }
     
     // Процесс сервера
     private var serverProcess: Process? = null
@@ -159,31 +177,63 @@ class ServerManagerViewModel : ViewModel() {
     }
     
     /**
-     * Остановка сервера
+     * Обновление метрик плагинов и игроков
      */
-    fun stopServer() {
-        if (!serverRunning.get() || serverStopping.get()) return
+    private fun updatePluginAndPlayerMetrics() {
+        // В реальном приложении здесь нужно получать информацию о плагинах и игроках
+        // из API сервера или через команды
         
-        serverStopping.set(true)
-        sendCommand("stop")
-        
-        // Принудительная остановка, если сервер не отвечает
-        executor.schedule({
-            if (serverRunning.get()) {
-                serverProcess?.destroyForcibly()
-                serverRunning.set(false)
-                serverStopping.set(false)
-                consoleOutput.set("${consoleOutput.get()}\n> Сервер принудительно остановлен")
+        // Пример для тестирования
+        if (serverRunning.get()) {
+            // Имитация нагрузки от плагинов
+            val pluginLoad = mapOf(
+                "WorldEdit" to (0.5 + Math.random() * 2),
+                "Essentials" to (0.3 + Math.random() * 1.5),
+                "Vault" to (0.1 + Math.random() * 0.5),
+                "LuckPerms" to (0.2 + Math.random() * 0.8)
+            )
+            
+            // Имитация нагрузки от игроков
+            val playerLoad = onlinePlayers.associateWith { (Math.random() * 5).toDouble() }
+            
+            Platform.runLater {
+                metrics.pluginLoad.clear()
+                metrics.pluginLoad.putAll(pluginLoad)
+                
+                metrics.playerLoad.clear()
+                metrics.playerLoad.putAll(playerLoad)
             }
-        }, 10, TimeUnit.SECONDS)
+        }
     }
     
+    fun stopServer() {
+        if (serverProcess?.isAlive == true) {
+            serverStopping.set(true)
+            
+            // Останавливаем таймер метрик
+            metricsTimer.stop()
+            
+            // Отправляем команду остановки сервера
+            sendCommandToProcess("stop")
+            
+            // Даем серверу время на корректное завершение
+            executor.schedule({
+                if (serverProcess?.isAlive == true) {
+                    serverProcess?.destroyForcibly()
+                }
+                serverProcess = null
+                Platform.runLater {
+                    serverRunning.set(false)
+                    serverStopping.set(false)
+                }
+            }, 10, TimeUnit.SECONDS)
+        }  
     /**
      * Отправка команды на сервер
      */
     fun sendCommand(command: String) {
         if (serverRunning.get() && command.isNotBlank()) {
-            serverProcess?.outputStream?.write("$command\n".toByteArray())
+{{ ... }}
             serverProcess?.outputStream?.flush()
             
             // Добавляем в историю
