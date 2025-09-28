@@ -214,31 +214,49 @@ class MainView : View("Minecraft Server Launcher") {
                     add(LoadInfoView())
                     
                     // Настройка разделителя
+                    setDividerPositions(0.7)
+                }
             }
             
-            region { hgrow = Priority.ALWAYS }
+            // Вкладка быстрых команд
+            tab("Быстрые команды") {
+                isClosable = false
+                
+                vbox {
+                    flowpane(hgap = 10.0, vgap = 10.0) {
+                        for (cmd in viewModel.quickCommands) {
+                            button(cmd.name) {
+                                graphic = if (cmd.icon.isNotBlank()) {
+                                    stackpane {
+                                        addClass("icon-${cmd.icon}")
+                                    }
+                                } else null
+                                
+                                tooltip(cmd.description)
+                                
+                                action {
+                                    viewModel.sendCommand(cmd.command)
+                                }
+                                
+                                prefWidth = 150.0
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        
+        // Нижний колонтитул с информацией о загрузке
+        bottom = hbox(spacing = 15, padding = insets(5)) {
+            addClass("status-bar")
             
             // Информация о загрузке
             hbox(spacing = 15) {
-                alignment = Pos.CENTER_RIGHT
+                addClass("status-info")
                 
                 // CPU
                 hbox(spacing = 3) {
-{{ ... }}
-                    
-                    // Вкладка мониторинга
-                    tab("Мониторинг") {
-                        isClosable = false
-                        
-                        splitpane(orientation = javafx.geometry.Orientation.VERTICAL) {
-                            // Верхняя часть - графики
-                            add(MetricsCharts())
-                            
-                            // Нижняя часть - информация о загрузке
-                            add(LoadInfoView())
-                            
-                            // Настройка разделителя
-                            setDividerPositions(0.7)
+                    label("CPU:")
                     label {
                         bind(stringBinding(viewModel.metrics.cpuUsage) { "%.1f%%".format(this ?: 0.0) })
                         style {
@@ -287,6 +305,7 @@ class MainView : View("Minecraft Server Launcher") {
             
             region { hgrow = Priority.ALWAYS }
             
+            // Ссылка на GitHub
             hyperlink("GitHub") {
                 action {
                     hostServices.showDocument("https://github.com/yourusername/mcserverlauncher")
