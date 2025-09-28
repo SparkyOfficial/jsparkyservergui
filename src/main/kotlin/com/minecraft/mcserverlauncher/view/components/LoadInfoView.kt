@@ -1,199 +1,119 @@
 package com.minecraft.mcserverlauncher.view.components
 
-import com.minecraft.mcserverlauncher.model.PlayerLoadInfo
-import com.minecraft.mcserverlauncher.model.PluginLoadInfo
 import com.minecraft.mcserverlauncher.model.ServerMetrics
-import javafx.geometry.Insets
-import javafx.scene.control.*
+import javafx.scene.control.Label
+import javafx.scene.control.TableView
+import javafx.scene.control.TableColumn
+import javafx.scene.control.cell.PropertyValueFactory
 import javafx.scene.layout.Priority
 import javafx.scene.layout.VBox
+import javafx.geometry.Insets
 import tornadofx.*
-import java.text.DecimalFormat
+import javafx.collections.FXCollections
+import javafx.scene.control.cell.TextFieldTableCell
+import javafx.util.converter.DoubleStringConverter
+import javafx.util.converter.NumberStringConverter
 
 /**
  * Компонент для отображения информации о загрузке плагинов и игроков
  */
 class LoadInfoView : VBox() {
-    private val metrics: ServerMetrics by inject()
+    private val metrics: ServerMetrics = ServerMetrics()
     
-    // Форматы для отображения чисел
-    private val decimalFormat = DecimalFormat("#,##0.00")
-    private val memoryFormat = DecimalFormat("#,##0.0")
+    // Классы для хранения данных таблиц
+    data class PluginInfo(val name: String, val load: Double, val memory: Long)
+    data class PlayerInfo(val name: String, val ping: Int, val load: Double)
     
     // Таблицы с информацией
-    private val pluginsTable = TableView<PluginLoadInfo>()
-    private val playersTable = TableView<PlayerLoadInfo>()
+    private val pluginsTable = TableView<PluginInfo>().apply {
+        // Настройка колонок для таблицы плагинов
+        val nameCol = TableColumn<PluginInfo, String>("Плагин").apply {
+            cellValueFactory = PropertyValueFactory("name")
+            prefWidth = 200.0
+        }
+        
+        val loadCol = TableColumn<PluginInfo, Number>("Нагрузка, %").apply {
+            cellValueFactory = PropertyValueFactory("load")
+            cellFactory = TextFieldTableCell.forTableColumn(NumberStringConverter("%.1f"))
+            prefWidth = 100.0
+        }
+        
+        val memoryCol = TableColumn<PluginInfo, Number>("Память (МБ)").apply {
+            cellValueFactory = PropertyValueFactory("memory")
+            cellFactory = TextFieldTableCell.forTableColumn(NumberStringConverter("%.1f"))
+            prefWidth = 100.0
+        }
+        
+        columns.addAll(nameCol, loadCol, memoryCol)
+        columnResizePolicy = TableView.CONSTRAINED_RESIZE_POLICY
+        isEditable = false
+    }
+    
+    private val playersTable = TableView<PlayerInfo>().apply {
+        // Настройка колонок для таблицы игроков
+        val playerNameCol = TableColumn<PlayerInfo, String>("Игрок").apply {
+            cellValueFactory = PropertyValueFactory("name")
+            prefWidth = 200.0
+        }
+        
+        val pingCol = TableColumn<PlayerInfo, Number>("Пинг (мс)").apply {
+            cellValueFactory = PropertyValueFactory("ping")
+            prefWidth = 100.0
+        }
+        
+        val loadCol = TableColumn<PlayerInfo, Number>("Нагрузка, %").apply {
+            cellValueFactory = PropertyValueFactory("load")
+            cellFactory = TextFieldTableCell.forTableColumn(NumberStringConverter("%.1f"))
+            prefWidth = 100.0
+        }
+        
+        columns.addAll(playerNameCol, pingCol, loadCol)
+        columnResizePolicy = TableView.CONSTRAINED_RESIZE_POLICY
+        isEditable = false
+    }
     
     init {
-        spacing = 10.0
         padding = Insets(10.0)
-        
-        // Создаем вкладки
-        val tabPane = TabPane().apply {
-            tabClosingPolicy = TabPane.TabClosingPolicy.UNAVAILABLE
-            
-            // Вкладка с плагинами
-            tabs.add(Tab("Плагины").apply {
-                content = pluginsTable
-                isClosable = false
-            })
-            
-            // Вкладка с игроками
-            tabs.add(Tab("Игроки").apply {
-                content = playersTable
-                isClosable = false
-            })
-            
-            // Растягиваем на всю доступную область
-            setMaxSize(Double.MAX_VALUE, Double.MAX_VALUE)
-            VBox.setVgrow(this, Priority.ALWAYS)
-        }
-        
-        // Настраиваем таблицу плагинов
-        setupPluginsTable()
-        
-        // Настраиваем таблицу игроков
-        setupPlayersTable()
-        
-        // Добавляем вкладки в контейнер
-        children.add(tabPane)
-        
-        // Обновляем данные при изменении метрик
-        metrics.lastUpdated.addListener { _, _, _ ->
-            updateTables()
-        }
+        spacing = 10.0
+
+        // Добавляем таблицы в контейнер
+        children.addAll(
+            Label("Загрузка плагинов").apply { 
+                style = "-fx-font-size: 16px; -fx-font-weight: bold;" 
+            },
+            pluginsTable.apply {
+                vgrow = Priority.ALWAYS
+                prefHeight = 200.0
+            },
+            Label("Загрузка игроков").apply { 
+                style = "-fx-font-size: 16px; -fx-font-weight: bold;" 
+            },
+            playersTable.apply {
+                vgrow = Priority.ALWAYS
+                prefHeight = 200.0
+            }
+        )
+
+        // Обновляем таблицы
+        updateTables()
     }
-    
-    /**
-     * Настройка таблицы плагинов
-     */
-    private fun setupPluginsTable() {
-        with(pluginsTable) {
-            // Колонка с названием плагина
-            column("Плагин", PluginLoadInfo::nameProperty) {
-                prefWidth = 200.0
-            }
-            
-            // Колонка с загрузкой CPU
-            column<PluginLoadInfo, String>("Нагрузка CPU (%)") {
-                cellFormat { load ->
-                    text = decimalFormat.format(load)
-                    style {
-                        val percent = load.toDouble()
-                        textFill = when {
-                            percent > 10 -> c("#ff4444")  // Красный для высокой нагрузки
-                            percent > 5 -> c("#ffbb33")   // Оранжевый для средней нагрузки
-                            else -> c("#99cc00")           // Зеленый для низкой нагрузки
-                        }
-                    }
-                }
-                
-                setCellValueFactory { 
-                    it.value.loadProperty.asString("%.2f")
-                }
-                
-                comparator = Comparator { a, b ->
-                    a.toDouble().compareTo(b.toDouble())
-                }
-                
-                prefWidth = 120.0
-            }
-            
-            // Колонка с использованием памяти
-            column<PluginLoadInfo, String>("Память (МБ)") {
-                cellFormat { memory ->
-                    text = memoryFormat.format(memory.toDouble() / 1024 / 1024)
-                }
-                
-                setCellValueFactory { 
-                    it.value.memoryProperty.asString("%.2f")
-                }
-                
-                comparator = Comparator { a, b ->
-                    a.toDouble().compareTo(b.toDouble())
-                }
-                
-                prefWidth = 120.0
-            }
-            
-            // Сортируем по убыванию нагрузки
-            sort()
-        }
-    }
-    
-    /**
-     * Настройка таблицы игроков
-     */
-    private fun setupPlayersTable() {
-        with(playersTable) {
-            // Колонка с ником игрока
-            column("Игрок", PlayerLoadInfo::nameProperty) {
-                prefWidth = 200.0
-            }
-            
-            // Колонка с пингом
-            column("Пинг", PlayerLoadInfo::pingProperty) {
-                cellFormat { ping ->
-                    text = ping.toString()
-                    style {
-                        textFill = when {
-                            ping > 200 -> c("#ff4444")  // Красный для высокого пинга
-                            ping > 100 -> c("#ffbb33")   // Оранжевый для среднего пинга
-                            else -> c("#99cc00")         // Зеленый для низкого пинга
-                        }
-                    }
-                }
-                prefWidth = 80.0
-            }
-            
-            // Колонка с нагрузкой
-            column<PlayerLoadInfo, String>("Нагрузка (%)") {
-                cellFormat { load ->
-                    text = decimalFormat.format(load)
-                    style {
-                        val percent = load.toDouble()
-                        textFill = when {
-                            percent > 10 -> c("#ff4444")  // Красный для высокой нагрузки
-                            percent > 5 -> c("#ffbb33")   // Оранжевый для средней нагрузки
-                            else -> c("#99cc00")           // Зеленый для низкой нагрузки
-                        }
-                    }
-                }
-                
-                setCellValueFactory { 
-                    it.value.loadProperty.asString("%.2f")
-                }
-                
-                comparator = Comparator { a, b ->
-                    a.toDouble().compareTo(b.toDouble())
-                }
-                
-                prefWidth = 100.0
-            }
-            
-            // Сортируем по убыванию нагрузки
-            sort()
-        }
-    }
-    
-    /**
-     * Обновление данных в таблицах
-     */
+
     private fun updateTables() {
-        // Обновляем таблицу плагинов
-        val pluginItems = metrics.pluginLoad.map { (name, load) ->
-            // В реальном приложении здесь нужно получать информацию о памяти плагина
-            PluginLoadInfo(name, load, 0)
-        }.sortedByDescending { it.load }
-        
-        pluginsTable.items.setAll(pluginItems)
-        
-        // Обновляем таблицу игроков
-        val playerItems = metrics.playerLoad.map { (name, load) ->
-            // В реальном приложении здесь нужно получать пинг игрока
-            PlayerLoadInfo(name, 0, load)
-        }.sortedByDescending { it.load }
-        
-        playersTable.items.setAll(playerItems)
+        try {
+            // Обновление данных о плагинах
+            val pluginData = metrics.pluginLoad.entries.map { (name, load) ->
+                PluginInfo(name, load, (load * 10).toLong()) // Примерное использование памяти
+            }
+            pluginsTable.items.setAll(*pluginData.toTypedArray())
+
+            // Обновление данных об игроках
+            val playerData = metrics.playerLoad.entries.map { (name, load) ->
+                PlayerInfo(name, (load * 20).toInt(), load) // Примерный пинг
+            }
+            playersTable.items.setAll(*playerData.toTypedArray())
+        } catch (e: Exception) {
+            // Игнорируем ошибки при обновлении таблиц
+            e.printStackTrace()
+        }
     }
 }

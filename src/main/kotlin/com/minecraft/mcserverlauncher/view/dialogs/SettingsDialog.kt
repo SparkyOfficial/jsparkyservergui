@@ -1,251 +1,252 @@
 package com.minecraft.mcserverlauncher.view.dialogs
 
-import com.minecraft.mcserverlauncher.model.ServerSettings
-import com.minecraft.mcserverlauncher.viewmodel.ServerManagerViewModel
-import javafx.geometry.Pos
+import com.minecraft.mcserverlauncher.viewmodel.SettingsViewModel
 import javafx.scene.control.*
 import javafx.scene.layout.*
+import javafx.stage.FileChooser
+import javafx.stage.DirectoryChooser
 import tornadofx.*
-import java.io.File
 
 /**
- * Диалоговое окно настроек сервера
+ * Диалог настроек приложения
  */
-class SettingsDialog : Fragment("Настройки сервера") {
-    private val viewModel: ServerManagerViewModel by inject()
+class SettingsDialog : View("Настройки") {
+    private val viewModel: SettingsViewModel by inject()
+    
+    // UI элементы
+    private lateinit var serverNameField: TextField
+    private lateinit var serverPortField: TextField
+    private lateinit var maxPlayersField: TextField
+    private lateinit var gamemodeCombo: ComboBox<String>
+    private lateinit var difficultyCombo: ComboBox<String>
+    private lateinit var serverJarField: TextField
+    private lateinit var serverDirectoryField: TextField
+    private lateinit var javaPathField: TextField
+    private lateinit var javaArgsArea: TextArea
+    private lateinit var paperOptimizationsCheck: CheckBox
+    private lateinit var preventMovingIntoUnloadedChunksCheck: CheckBox
+    private lateinit var autoRestartCheck: CheckBox
+    private lateinit var restartOnCrashCheck: CheckBox
+    private lateinit var backupIntervalField: TextField
+    private lateinit var themeCombo: ComboBox<String>
+    private lateinit var uiScaleSlider: Slider
+    private lateinit var consoleFontCombo: ComboBox<String>
+    private lateinit var consoleFontSizeSpinner: Spinner<Int>
     
     override val root = borderpane {
-        // Верхняя панель с кнопками
-        top = hbox(spacing = 10, padding = insets(10)) {
-            button("Сохранить") {
-                action {
-                    saveSettings()
-                    close()
+        center {
+            tabpane {
+                tab("Основные") {
+                    form {
+                        fieldset("Основные настройки") {
+                            field("Имя сервера:") {
+                                serverNameField = textfield(viewModel.serverName) { }
+                            }
+                            
+                            field("Порт сервера:") {
+                                serverPortField = textfield(viewModel.serverPort.toString()) { }
+                            }
+                            
+                            field("Макс. игроков:") {
+                                maxPlayersField = textfield(viewModel.maxPlayers.toString()) { }
+                            }
+                        }
+                        
+                        fieldset("Настройки игры") {
+                            field("Режим игры:") {
+                                gamemodeCombo = combobox(
+                                    values = listOf("Выживание", "Креатив", "Приключение", "Наблюдение"),
+                                    property = viewModel.gamemodeProperty()
+                                )
+                            }
+                            
+                            field("Сложность:") {
+                                difficultyCombo = combobox(
+                                    values = listOf("Мирная", "Лёгкая", "Нормальная", "Сложная"),
+                                    property = viewModel.difficultyProperty()
+                                )
+                            }
+                        }
+                    }
                 }
-            }
-            
-            button("Отмена") {
-                action {
-                    close()
+                
+                tab("Сервер") {
+                    form {
+                        fieldset("Настройки сервера") {
+                            field("Файл сервера:") {
+                                hbox(spacing = 10) {
+                                    serverJarField = textfield(viewModel.serverJar) {
+                                        hgrow = Priority.ALWAYS
+                                    }
+                                    button("Обзор...") {
+                                        action {
+                                            val fileChooser = FileChooser().apply {
+                                                title = "Выберите файл сервера (server.jar)"
+                                                extensionFilters.add(FileChooser.ExtensionFilter("JAR файлы", "*.jar"))
+                                            }
+                                            val file = fileChooser.showOpenDialog(currentWindow)
+                                            file?.let { serverJarField.text = it.absolutePath }
+                                        }
+                                    }
+                                }
+                            }
+                            
+                            field("Директория сервера:") {
+                                hbox(spacing = 10) {
+                                    serverDirectoryField = textfield(viewModel.serverDirectory) {
+                                        hgrow = Priority.ALWAYS
+                                    }
+                                    button("Обзор...") {
+                                        action {
+                                            val directoryChooser = DirectoryChooser().apply {
+                                                title = "Выберите директорию сервера"
+                                            }
+                                            val dir = directoryChooser.showDialog(currentWindow)
+                                            dir?.let { serverDirectoryField.text = it.absolutePath }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                        
+                        fieldset("Настройки Java") {
+                            field("Путь к Java:") {
+                                hbox(spacing = 10) {
+                                    javaPathField = textfield(viewModel.javaPath) {
+                                        hgrow = Priority.ALWAYS
+                                    }
+                                    button("Обзор...") {
+                                        action {
+                                            val fileChooser = FileChooser().apply {
+                                                title = "Выберите исполняемый файл Java (java.exe)"
+                                                extensionFilters.add(FileChooser.ExtensionFilter("Исполняемые файлы", "*.exe"))
+                                            }
+                                            val file = fileChooser.showOpenDialog(currentWindow)
+                                            file?.let { javaPathField.text = it.absolutePath }
+                                        }
+                                    }
+                                }
+                            }
+                            
+                            field("Аргументы JVM:") {
+                                javaArgsArea = textarea(viewModel.javaArgs) {
+                                    prefRowCount = 3
+                                }
+                            }
+                        }
+                        
+                        fieldset("Дополнительно") {
+                            paperOptimizationsCheck = checkbox("Оптимизации Paper", viewModel.paperOptimizations)
+                            preventMovingIntoUnloadedChunksCheck = checkbox("Предотвращать вход в незагруженные чанки", viewModel.preventMovingIntoUnloadedChunks)
+                            autoRestartCheck = checkbox("Автоперезапуск", viewModel.autoRestart)
+                            restartOnCrashCheck = checkbox("Перезапуск при падении", viewModel.restartOnCrash)
+                        }
+                        
+                        fieldset("Бэкапы") {
+                            field("Интервал бэкапов (мин):") {
+                                backupIntervalField = textfield(viewModel.backupInterval.toString()) { }
+                            }
+                        }
+                    }
                 }
-            }
-            
-            button("Применить") {
-                action {
-                    saveSettings()
-                }
-            }
-            
-            region { hgrow = Priority.ALWAYS }
-            
-            button("Сбросить") {
-                action {
-                    // TODO: Сброс настроек к значениям по умолчанию
+                
+                tab("Внешний вид") {
+                    form {
+                        fieldset("Тема") {
+                            field("Цветовая схема:") {
+                                themeCombo = combobox(
+                                    values = listOf("Светлая", "Тёмная", "Системная"),
+                                    property = viewModel.themeProperty()
+                                )
+                            }
+                            
+                            field("Масштаб интерфейса (%):") {
+                                uiScaleSlider = slider(50.0, 200.0, viewModel.uiScale.value * 100.0) {
+                                    majorTickUnit = 50.0
+                                    minorTickCount = 5
+                                    isShowTickMarks = true
+                                    isShowTickLabels = true
+                                }
+                            }
+                        }
+                        
+                        fieldset("Консоль") {
+                            field("Шрифт консоли:") {
+                                consoleFontCombo = combobox(
+                                    values = listOf("Consolas", "Courier New", "Monospaced"),
+                                    property = viewModel.consoleFontProperty()
+                                )
+                            }
+                            
+                            field("Размер шрифта:") {
+                                consoleFontSizeSpinner = Spinner(8, 24, viewModel.consoleFontSize.value)
+                                consoleFontSizeSpinner.valueFactory.value = viewModel.consoleFontSize.value
+                                viewModel.consoleFontSize.addListener { _, _, newValue ->
+                                    consoleFontSizeSpinner.valueFactory.value = newValue.toInt()
+                                }
+                            }
+                        }
+                    }
                 }
             }
         }
         
-        // Центральная область с настройками
-        center = scrollpane(fitToWidth = true) {
-            vbox(spacing = 10, padding = insets(10)) {
-                // Вкладки настроек
-                tabpane {
-                    tab("Основные") {
-                        form {
-                            fieldset("Основные настройки") {
-                                field("Название сервера") {
-                                    textfield(viewModel.settings::serverName)
-                                }
-                                
-                                field("Порт сервера") {
-                                    textfield(viewModel.settings::serverPort.toString()) {
-                                        filterInput { it.controlNewText.isInt() }
-                                    }
-                                }
-                                
-                                field("Макс. игроков") {
-                                    textfield(viewModel.settings::maxPlayers.toString()) {
-                                        filterInput { it.controlNewText.isInt() }
-                                    }
-                                }
-                                
-                                field("Режим игры") {
-                                    combobox(
-                                        property = viewModel.settings::gamemode,
-                                        values = listOf("survival", "creative", "adventure", "spectator")
-                                    )
-                                }
-                                
-                                field("Сложность") {
-                                    combobox(
-                                        property = viewModel.settings::difficulty,
-                                        values = listOf("peaceful", "easy", "normal", "hard")
-                                    )
-                                }
-                                
-                                checkbox("Включить PvP", viewModel.settings::pvp)
-                                checkbox("Онлайн-режим", viewModel.settings::onlineMode)
-                            }
-                            
-                            fieldset("Файлы сервера") {
-                                field("JAR-файл сервера") {
-                                    hbox(spacing = 5) {
-                                        textfield(viewModel.settings::serverJar) {
-                                            hgrow = Priority.ALWAYS
-                                        }
-                                        
-                                        button("Обзор...") {
-                                            action {
-                                                chooseFile("Выберите JAR-файл сервера",
-                                                    arrayOf(FileChooser.ExtensionFilter("JAR Files", "*.jar"))
-                                                )?.firstOrNull()?.let {
-                                                    viewModel.settings.serverJar = it.absolutePath
-                                                }
-                                            }
-                                        }
-                                    }
-                                }
-                                
-                                field("Директория сервера") {
-                                    hbox(spacing = 5) {
-                                        textfield(viewModel.settings::serverDirectory) {
-                                            hgrow = Priority.ALWAYS
-                                        }
-                                        
-                                        button("Обзор...") {
-                                            action {
-                                                chooseDirectory("Выберите директорию сервера")?.let {
-                                                    viewModel.settings.serverDirectory = it.absolutePath
-                                                }
-                                            }
-                                        }
-                                    }
-                                }
-                                
-                                field("Путь к Java") {
-                                    hbox(spacing = 5) {
-                                        textfield(viewModel.settings::javaPath) {
-                                            promptText = "Оставьте пустым для использования Java по умолчанию"
-                                            hgrow = Priority.ALWAYS
-                                        }
-                                        
-                                        button("Обзор...") {
-                                            action {
-                                                chooseFile("Выберите исполняемый файл Java",
-                                                    arrayOf(FileChooser.ExtensionFilter("Java Executable", "java.exe"))
-                                                )?.firstOrNull()?.let {
-                                                    viewModel.settings.javaPath = it.absolutePath
-                                                }
-                                            }
-                                        }
-                                    }
-                                }
-                                
-                                field("Аргументы JVM") {
-                                    textarea(viewModel.settings::javaArgs) {
-                                        prefRowCount = 3
-                                    }
-                                    button("Рекомендуемые настройки") {
-                                        action {
-                                            viewModel.settings.javaArgs = viewModel.settings.getRecommendedJvmArgs()
-                                        }
-                                    }
-                                }
-                            }
-                        }
+        bottom {
+            buttonbar {
+                button("Сохранить") {
+                    action {
+                        saveSettings()
+                        close()
                     }
-                    
-                    tab("Производительность") {
-                        form {
-                            fieldset("Настройки Paper") {
-                                visibleWhen { viewModel.settings.isPaperServer.toProperty() }
-                                
-                                checkbox("Использовать оптимизации Paper", viewModel.settings::paperOptimizations)
-                                checkbox("Использовать флаги Aikar", viewModel.settings::useAikarFlags)
-                                
-                                field("Макс. загрузок чанков в тик") {
-                                    textfield(viewModel.settings::maxChunkLoads.toString()) {
-                                        filterInput { it.controlNewText.isInt() }
-                                    }
-                                }
-                                
-                                field("Макс. коллизий сущностей") {
-                                    textfield(viewModel.settings::maxEntityCollisions.toString()) {
-                                        filterInput { it.controlNewText.isInt() }
-                                    }
-                                }
-                                
-                                checkbox("Предотвращать вход в незагруженные чанки", 
-                                    viewModel.settings::preventMovingIntoUnloadedChunks)
-                            }
-                            
-                            fieldset("Автоматизация") {
-                                checkbox("Автоперезапуск", viewModel.settings::autoRestart)
-                                checkbox("Перезапуск при падении", viewModel.settings::restartOnCrash)
-                                
-                                field("Интервал бэкапов (минут)") {
-                                    textfield(viewModel.settings::backupInterval.toString()) {
-                                        filterInput { it.controlNewText.isInt() }
-                                    }
-                                }
-                            }
-                        }
-                    }
-                    
-                    tab("Быстрые команды") {
-                        vbox(spacing = 10, padding = insets(10)) {
-                            tableview(viewModel.quickCommands) {
-                                column("Название", QuickCommand::nameProperty)
-                                column("Команда", QuickCommand::commandProperty)
-                                column("Описание", QuickCommand::descriptionProperty)
-                                
-                                onEditCommit { event ->
-                                    val item = event.tableView.items[event.tablePosition.row]
-                                    when (event.tablePosition.column) {
-                                        0 -> item.name = event.newValue
-                                        1 -> item.command = event.newValue
-                                        2 -> item.description = event.newValue
-                                    }
-                                }
-                                
-                                contextmenu {
-                                    item("Добавить команду") {
-                                        action {
-                                            viewModel.quickCommands.add(
-                                                QuickCommand("Новая команда", "say Hello!", "Описание")
-                                            )
-                                        }
-                                    }
-                                    
-                                    item("Удалить") {
-                                        action {
-                                            selectionModel.selectedItem?.let {
-                                                viewModel.quickCommands.remove(it)
-                                            }
-                                        }
-                                    }
-                                }
-                                
-                                columnResizePolicy = SmartResize.POLICY
-                            }
-                        }
-                    }
+                }
+                button("Отмена") {
+                    action { close() }
                 }
             }
         }
     }
     
-    /**
-     * Сохранение настроек
-     */
     private fun saveSettings() {
-        // TODO: Добавить валидацию настроек
-        viewModel.saveSettings()
-        information("Настройки сохранены", "Изменения вступят в силу после перезапуска сервера.")
-    }
-    
-    init {
-        // Настройка размера диалогового окна
-        setSize(800.0, 600.0)
+        try {
+            // Основные настройки
+            viewModel.serverName.value = serverNameField.text
+            viewModel.serverPort.value = serverPortField.text.toIntOrNull() ?: 25565
+            viewModel.maxPlayers.value = maxPlayersField.text.toIntOrNull() ?: 20
+            
+            // Настройки игры
+            viewModel.gamemode.value = gamemodeCombo.selectionModel.selectedItem ?: "Выживание"
+            viewModel.difficulty.value = difficultyCombo.selectionModel.selectedItem ?: "Нормальная"
+            
+            // Пути
+            viewModel.serverJar.value = serverJarField.text
+            viewModel.serverDirectory.value = serverDirectoryField.text
+            
+            // Настройки Java
+            viewModel.javaPath.value = javaPathField.text
+            viewModel.javaArgs.value = javaArgsArea.text
+            
+            // Дополнительные настройки
+            viewModel.paperOptimizations.value = paperOptimizationsCheck.isSelected
+            viewModel.preventMovingIntoUnloadedChunks.value = preventMovingIntoUnloadedChunksCheck.isSelected
+            viewModel.autoRestart.value = autoRestartCheck.isSelected
+            viewModel.restartOnCrash.value = restartOnCrashCheck.isSelected
+            
+            // Интервал бэкапов
+            viewModel.backupInterval.value = backupIntervalField.text.toIntOrNull() ?: 60
+            
+            // UI настройки
+            viewModel.uiScale.value = uiScaleSlider.value.toDouble() / 100.0
+            
+            // Размер шрифта консоли
+            viewModel.consoleFontSize.value = consoleFontSizeSpinner.valueFactory.value
+            
+            // Сохраняем настройки
+            viewModel.saveSettings()
+            
+            // Показываем уведомление об успешном сохранении
+            information("Настройки сохранены", "Настройки сервера были успешно сохранены.")
+        } catch (e: Exception) {
+            error("Ошибка сохранения", "Не удалось сохранить настройки: ${e.message}")
+        }
     }
 }

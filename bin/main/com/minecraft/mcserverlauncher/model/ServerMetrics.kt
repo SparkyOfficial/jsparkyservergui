@@ -1,85 +1,89 @@
 package com.minecraft.mcserverlauncher.model
 
 import javafx.beans.property.*
-import tornadofx.*
+import javafx.collections.FXCollections
+import javafx.collections.ObservableList
+import javafx.collections.ObservableMap
 import java.time.Instant
 
 /**
- * Модель для хранения метрик сервера
+ * Класс для хранения метрик сервера
  */
 class ServerMetrics {
-    // Использование CPU в процентах
+    // Основные метрики
     val cpuUsage = SimpleDoubleProperty(0.0)
-    
-    // Использование оперативной памяти в МБ
     val usedMemory = SimpleLongProperty(0)
     val maxMemory = SimpleLongProperty(0)
+    val tps = SimpleDoubleProperty(20.0)
     
-    // Использование диска в МБ
+    // Загрузка плагинов и игроков
+    val pluginLoad: ObservableMap<String, Double> = FXCollections.observableHashMap()
+    val playerLoad: ObservableMap<String, Double> = FXCollections.observableHashMap()
+    
+    // История измерений
+    private val maxHistoryPoints = 100
+    val cpuHistory: ObservableList<Pair<Long, Double>> = FXCollections.observableArrayList()
+    val memoryHistory: ObservableList<Pair<Long, Long>> = FXCollections.observableArrayList()
+    val tpsHistory: ObservableList<Pair<Long, Double>> = FXCollections.observableArrayList()
+    
+    // Время последнего обновления
+    val lastUpdated = SimpleObjectProperty<Instant>(Instant.now())
+    
+    // Статистика
+    val onlinePlayers = SimpleIntegerProperty(0)
+    val maxPlayers = SimpleIntegerProperty(0)
+    val worldCount = SimpleIntegerProperty(0)
+    val entityCount = SimpleIntegerProperty(0)
+    val chunkCount = SimpleIntegerProperty(0)
+    
+    // Производительность
+    val averageTickTime = SimpleDoubleProperty(0.0)
+    val freeMemory = SimpleLongProperty(0)
+    val totalMemory = SimpleLongProperty(0)
+    val maxHeap = SimpleLongProperty(0)
+    
+    // Диск
     val usedDisk = SimpleLongProperty(0)
     val maxDisk = SimpleLongProperty(0)
     
-    // Сетевой трафик в КБ/с
-    val networkIn = SimpleDoubleProperty(0.0)
-    val networkOut = SimpleDoubleProperty(0.0)
-    
-    // TPS (тиков в секунду)
-    val tps = SimpleDoubleProperty(20.0)
-    
-    // Загрузка по игрокам
-    val playerLoad = observableMap<String, Double>()
-    
-    // Загрузка по плагинам
-    val pluginLoad = observableMap<String, Double>()
-    
-    // Временная метка последнего обновления
-    val lastUpdated = SimpleObjectProperty<Instant>(Instant.now())
-    
-    // История метрик для графиков
-    val cpuHistory = observableList<Pair<Long, Double>>()
-    val memoryHistory = observableList<Pair<Long, Long>>()
-    val tpsHistory = observableList<Pair<Long, Double>>()
-    
-    // Максимальное количество точек в истории
-    private val maxHistoryPoints = 100
-    
-    /**
-     * Обновить историю метрик
-     */
+    // Обновление истории метрик
     fun updateHistory() {
         val now = System.currentTimeMillis()
         
         // Обновляем историю CPU
-        cpuHistory.add(now to cpuUsage.get())
-        if (cpuHistory.size > maxHistoryPoints) {
-            cpuHistory.removeAt(0)
+        cpuUsage.value.let { cpu ->
+            cpuHistory.add(now to cpu)
+            if (cpuHistory.size > maxHistoryPoints) {
+                cpuHistory.removeAt(0)
+            }
         }
         
         // Обновляем историю памяти
-        memoryHistory.add(now to usedMemory.get())
-        if (memoryHistory.size > maxHistoryPoints) {
-            memoryHistory.removeAt(0)
+        usedMemory.value.let { memory ->
+            memoryHistory.add(now to memory)
+            if (memoryHistory.size > maxHistoryPoints) {
+                memoryHistory.removeAt(0)
+            }
         }
         
         // Обновляем историю TPS
-        tpsHistory.add(now to tps.get())
-        if (tpsHistory.size > maxHistoryPoints) {
-            tpsHistory.removeAt(0)
+        tps.value.let { tpsValue ->
+            tpsHistory.add(now to tpsValue)
+            if (tpsHistory.size > maxHistoryPoints) {
+                tpsHistory.removeAt(0)
+            }
         }
         
+        // Обновляем время последнего обновления
         lastUpdated.set(Instant.now())
     }
     
-    /**
-     * Получить загрузку памяти в процентах
-     */
     val memoryUsagePercentage: Double
         get() = if (maxMemory.get() > 0) {
             usedMemory.get() / maxMemory.get().toDouble() * 100.0
         } else {
             0.0
         }
-    
     /**
      * Получить загрузку диска в процентах
      */

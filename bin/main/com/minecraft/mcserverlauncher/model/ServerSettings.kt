@@ -1,5 +1,6 @@
 package com.minecraft.mcserverlauncher.model
 
+import javafx.beans.property.*
 import tornadofx.*
 import java.io.File
 
@@ -8,35 +9,100 @@ import java.io.File
  */
 class ServerSettings {
     // Основные настройки
-    var serverName: String by property("Minecraft Server")
-    var serverPort: Int by property(25565)
-    var maxPlayers: Int by property(20)
-    var onlineMode: Boolean by property(true)
-    var pvp: Boolean by property(true)
-    var difficulty: String by property("easy") // easy, normal, hard, peaceful
-    var gamemode: String by property("survival") // survival, creative, adventure, spectator
-    var motd: String by property("A Minecraft Server")
-    var viewDistance: Int by property(10)
-    var simulationDistance: Int by property(10)
+    private val _serverName = SimpleStringProperty("Minecraft Server")
+    var serverName: String by _serverName
+    fun serverNameProperty() = _serverName
+    
+    private val _serverPort = SimpleIntegerProperty(25565)
+    var serverPort: Int by _serverPort
+    fun serverPortProperty() = _serverPort
+    
+    private val _maxPlayers = SimpleIntegerProperty(20)
+    var maxPlayers: Int by _maxPlayers
+    fun maxPlayersProperty() = _maxPlayers
+    
+    private val _onlineMode = SimpleBooleanProperty(true)
+    var onlineMode: Boolean by _onlineMode
+    fun onlineModeProperty() = _onlineMode
+    
+    private val _pvp = SimpleBooleanProperty(true)
+    var pvp: Boolean by _pvp
+    fun pvpProperty() = _pvp
+    
+    private val _difficulty = SimpleStringProperty("easy") // easy, normal, hard, peaceful
+    var difficulty: String by _difficulty
+    fun difficultyProperty() = _difficulty
+    
+    private val _gamemode = SimpleStringProperty("survival") // survival, creative, adventure, spectator
+    var gamemode: String by _gamemode
+    fun gamemodeProperty() = _gamemode
+    
+    private val _motd = SimpleStringProperty("A Minecraft Server")
+    var motd: String by _motd
+    fun motdProperty() = _motd
+    
+    private val _viewDistance = SimpleIntegerProperty(10)
+    var viewDistance: Int by _viewDistance
+    fun viewDistanceProperty() = _viewDistance
+    
+    private val _simulationDistance = SimpleIntegerProperty(10)
+    var simulationDistance: Int by _simulationDistance
+    fun simulationDistanceProperty() = _simulationDistance
     
     // Настройки Paper
-    var paperOptimizations: Boolean by property(true)
-    var useAikarFlags: Boolean by property(true)
-    var maxChunkLoads: Int by property(300)
-    var maxEntityCollisions: Int by property(8)
-    var preventMovingIntoUnloadedChunks: Boolean by property(true)
+    private val _paperOptimizations = SimpleBooleanProperty(true)
+    var paperOptimizations: Boolean by _paperOptimizations
+    fun paperOptimizationsProperty() = _paperOptimizations
+    
+    private val _useAikarFlags = SimpleBooleanProperty(true)
+    var useAikarFlags: Boolean by _useAikarFlags
+    fun useAikarFlagsProperty() = _useAikarFlags
+    
+    private val _maxChunkLoads = SimpleIntegerProperty(300)
+    var maxChunkLoads: Int by _maxChunkLoads
+    fun maxChunkLoadsProperty() = _maxChunkLoads
+    
+    private val _maxEntityCollisions = SimpleIntegerProperty(8)
+    var maxEntityCollisions: Int by _maxEntityCollisions
+    fun maxEntityCollisionsProperty() = _maxEntityCollisions
+    
+    private val _preventMovingIntoUnloadedChunks = SimpleBooleanProperty(true)
+    var preventMovingIntoUnloadedChunks: Boolean by _preventMovingIntoUnloadedChunks
+    fun preventMovingIntoUnloadedChunksProperty() = _preventMovingIntoUnloadedChunks
     
     // Пути
-    var serverJar: String by property("")
-    var serverDirectory: String by property("")
-    var javaPath: String by property("")
-    var javaArgs: String by property("")
+    private val _serverJar = SimpleStringProperty("")
+    var serverJar: String by _serverJar
+    fun serverJarProperty() = _serverJar
+    
+    private val _serverDirectory = SimpleStringProperty("")
+    var serverDirectory: String by _serverDirectory
+    fun serverDirectoryProperty() = _serverDirectory
+    
+    private val _javaPath = SimpleStringProperty("")
+    var javaPath: String by _javaPath
+    fun javaPathProperty() = _javaPath
+    
+    private val _javaArgs = SimpleStringProperty("")
+    var javaArgs: String by _javaArgs
+    fun javaArgsProperty() = _javaArgs
     
     // Автоматические действия
-    var autoRestart: Boolean by property(false)
-    var restartOnCrash: Boolean by property(true)
-    var autoBackup: Boolean by property(true)
-    var backupInterval: Int by property(60) // в минутах
+    private val _autoRestart = SimpleBooleanProperty(false)
+    var autoRestart: Boolean by _autoRestart
+    fun autoRestartProperty() = _autoRestart
+    
+    private val _restartOnCrash = SimpleBooleanProperty(true)
+    var restartOnCrash: Boolean by _restartOnCrash
+    fun restartOnCrashProperty() = _restartOnCrash
+    
+    private val _autoBackup = SimpleBooleanProperty(true)
+    var autoBackup: Boolean by _autoBackup
+    fun autoBackupProperty() = _autoBackup
+    
+    private val _backupInterval = SimpleIntegerProperty(60) // в минутах
+    var backupInterval: Int by _backupInterval
+    fun backupIntervalProperty() = _backupInterval
     
     // Быстрые команды
     val quickCommands = mutableListOf<QuickCommand>()
@@ -109,13 +175,3 @@ class ServerSettings {
         return args
     }
 }
-
-/**
- * Класс для быстрых команд
- */
-data class QuickCommand(
-    val name: String,
-    val command: String,
-    val description: String = "",
-    val icon: String = ""
-)

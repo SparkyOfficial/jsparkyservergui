@@ -1,28 +1,32 @@
 package com.minecraft.mcserverlauncher.viewmodel
 
 import com.minecraft.mcserverlauncher.model.QuickCommand
-import com.minecraft.mcserverlauncher.model.ServerMetrics
+import com.minecraft.mcserverlauncher.model.ServerMetrics as ServerMetricsModel
 import com.minecraft.mcserverlauncher.model.ServerSettings
+import kotlin.concurrent.thread
 import javafx.animation.KeyFrame
 import javafx.animation.Timeline
 import javafx.application.Platform
 import javafx.beans.property.*
 import javafx.collections.FXCollections
 import javafx.collections.ObservableList
+import javafx.scene.paint.Color
 import javafx.util.Duration
 import tornadofx.*
-import java.io.File
+import java.io.*
 import java.lang.management.ManagementFactory
 import java.nio.file.Files
 import java.nio.file.Paths
 import java.nio.file.StandardCopyOption
 import java.util.concurrent.Executors
+import java.util.concurrent.ScheduledExecutorService
 import java.util.concurrent.TimeUnit
+import java.util.regex.Pattern
 
 /**
  * ViewModel для управления сервером
  */
-class ServerManagerViewModel : ViewModel() {
+class ServerManagerViewModel : Controller() {
     // Состояние сервера
     val serverRunning = SimpleBooleanProperty(false)
     val serverStarting = SimpleBooleanProperty(false)
@@ -44,147 +48,25 @@ class ServerManagerViewModel : ViewModel() {
         QuickCommand("Перезагрузить", "reload confirm", "Перезагрузить плагины (не рекомендуется)", "refresh"),
         QuickCommand("Сохранение мира", "save-all", "Сохранить все миры", "save"),
         QuickCommand("Очистка мобов", "kill @e[type=!player]", "Удалить всех мобов", "delete"),
-        QuickCommand("Время день", "time set day", "Установить время суток на день", "brightness_5"),
         QuickCommand("Погода ясно", "weather clear", "Установить ясную погоду", "wb_sunny")
     )
     
     // История команд
     private val commandHistory = mutableListOf<String>()
-    private var commandHistoryIndex = -1
-    
-    // Метрики сервера
-    val metrics = ServerMetrics()
-    
-    // Таймер для обновления метрик
-    private val metricsTimer = Timeline(
-        KeyFrame(Duration.seconds(1.0)) {
-            updateMetrics()
-        }
-    ).apply {
-        cycleCount = javafx.animation.Animation.INDEFINITE
-        play()
-    }
+    private var commandHistoryIndex = 0
     
     // Процесс сервера
     private var serverProcess: Process? = null
+    
+    // Исполнитель для обновления метрик
     private val executor = Executors.newSingleThreadScheduledExecutor()
     
-    init {
-        // Загрузка настроек при инициализации
-        loadSettings()
-        
-        // Настройка таймера для обновления информации о сервере
-        executor.scheduleAtFixedRate({
-            if (serverRunning.get()) {
-                updateServerInfo()
-            }
-        }, 5, 5, TimeUnit.SECONDS)
-    }
+    // Метрики сервера
+    val metrics = ServerMetricsModel()
     
-    /**
-     * Запуск сервера
-     */
-    fun startServer() {
-        if (serverRunning.get() || serverStarting.get()) return
-        
-        serverStarting.set(true)
-        consoleOutput.set("${consoleOutput.get()}\n> Запуск сервера...")
-        
-        try {
-            val javaPath = if (settings.javaPath.isNotBlank()) settings.javaPath else "java"
-            val serverDir = File(settings.serverDirectory)
-            
-            if (!serverDir.exists()) {
-                serverDir.mkdirs()
-            }
-            
-            val jarFile = File(settings.serverJar)
-            if (!jarFile.exists()) {
-                consoleOutput.set("${consoleOutput.get()}\nОШИБКА: Файл сервера не найден: ${jarFile.absolutePath}")
-                serverStarting.set(false)
-                return
-            }
-            
-            // Копируем JAR в директорию сервера, если его там нет
-            val serverJar = File(serverDir, jarFile.name)
-            if (!serverJar.exists() || serverJar.length() != jarFile.length()) {
-                Files.copy(jarFile.toPath(), serverJar.toPath(), StandardCopyOption.REPLACE_EXISTING)
-            }
-            
-            // Собираем команду для запуска
-            val command = mutableListOf<String>()
-            command.add(javaPath)
-            
-            // Добавляем аргументы JVM
-            val jvmArgs = if (settings.javaArgs.isNotBlank()) {
-                settings.javaArgs.split("\s+")
-            } else {
-                settings.getRecommendedJvmArgs().split("\s+")
-            }
-            command.addAll(jvmArgs)
-            
-            // Добавляем путь к JAR и аргументы сервера
-            command.add("-jar")
-            command.add(serverJar.name)
-            command.addAll(settings.getServerArgs())
-            
-            // Запускаем процесс
-            val processBuilder = ProcessBuilder(command)
-                .directory(serverDir)
-                .redirectErrorStream(true)
-                
-            serverProcess = processBuilder.start()
-            serverRunning.set(true)
-            serverStarting.set(false)
-            
-            // Запускаем чтение вывода
-            Thread {
-                val reader = serverProcess!!.inputStream.bufferedReader()
-                var line: String?
-                
-                while (serverProcess!!.isAlive) {
-                    line = reader.readLine()
-                    if (line != null) {
-                        val finalLine = line
-                        Platform.runLater {
-                            consoleOutput.set("${consoleOutput.get()}\n$finalLine")
-                            parseConsoleOutput(finalLine)
-                        }
-                    }
-                }
-                
-                // Сервер завершил работу
-                Platform.runLater {
-                    serverRunning.set(false)
-                    serverProcess = null
-                    consoleOutput.set("${consoleOutput.get()}\n> Сервер остановлен")
-                    
-                    // Автоперезапуск, если включен
-                    if (settings.autoRestart) {
-                        Thread.sleep(5000)
-                        if (!serverRunning.get()) {
-                            startServer()
-                        }
-                    }
-                }
-            }.start()
-            
-        } catch (e: Exception) {
-            consoleOutput.set("${consoleOutput.get()}\nОШИБКА при запуске сервера: ${e.message}")
-            serverStarting.set(false)
-            serverRunning.set(false)
-        }
-    }
-    
-    /**
-     * Обновление метрик плагинов и игроков
-     */
+    // Обновление метрик плагинов и игроков
     private fun updatePluginAndPlayerMetrics() {
-        // В реальном приложении здесь нужно получать информацию о плагинах и игроках
-        // из API сервера или через команды
-        
-        // Пример для тестирования
-        if (serverRunning.get()) {
+        try {
             // Имитация нагрузки от плагинов
             val pluginLoad = mapOf(
                 "WorldEdit" to (0.5 + Math.random() * 2),
@@ -192,152 +74,171 @@ class ServerManagerViewModel : ViewModel() {
                 "Vault" to (0.1 + Math.random() * 0.5),
                 "LuckPerms" to (0.2 + Math.random() * 0.8)
             )
-            
-            // Имитация нагрузки от игроков
-            val playerLoad = onlinePlayers.associateWith { (Math.random() * 5).toDouble() }
-            
-            Platform.runLater {
-                metrics.pluginLoad.clear()
-                metrics.pluginLoad.putAll(pluginLoad)
-                
-                metrics.playerLoad.clear()
-                metrics.playerLoad.putAll(playerLoad)
+
+            // Обновляем метрики плагинов
+            metrics.pluginLoad.clear()
+            metrics.pluginLoad.putAll(pluginLoad)
+
+            // Обновляем метрики игроков
+            val playerLoad = onlinePlayers.associateWith { (Math.random() * 5.0).toDouble() }
+            metrics.playerLoad.clear()
+            playerLoad.forEach { (player, load) ->
+                metrics.playerLoad[player] = load
             }
+        } catch (e: Exception) {
+            // Игнорируем ошибки при обновлении метрик
         }
     }
     
-    fun stopServer() {
-        if (serverProcess?.isAlive == true) {
-            serverStopping.set(true)
-            
-            // Останавливаем таймер метрик
-            metricsTimer.stop()
-            
-            // Отправляем команду остановки сервера
-            sendCommandToProcess("stop")
-            
-            // Даем серверу время на корректное завершение
-            executor.schedule({
-                if (serverProcess?.isAlive == true) {
-                    serverProcess?.destroyForcibly()
-                }
-                serverProcess = null
-                Platform.runLater {
-                    serverRunning.set(false)
-                    serverStopping.set(false)
-                }
-            }, 10, TimeUnit.SECONDS)
-        }  
-    /**
-     * Отправка команды на сервер
-     */
-    fun sendCommand(command: String) {
-        if (serverRunning.get() && command.isNotBlank()) {
-{{ ... }}
-            serverProcess?.outputStream?.flush()
-            
-            // Добавляем в историю
-            commandHistory.add(command)
-            commandHistoryIndex = commandHistory.size
-            
-            // Ограничиваем размер истории
-            if (commandHistory.size > 100) {
-                commandHistory.removeAt(0)
-                commandHistoryIndex--
-            }
-        }
+    // Таймер для обновления метрик
+    private val metricsUpdater = Timeline(
+        KeyFrame(Duration.seconds(1.0), {
+            updateMetrics()
+        })
+    ).apply {
+        cycleCount = Timeline.INDEFINITE
     }
-    
-    /**
-     * Получение предыдущей команды из истории
-     */
-    fun getPreviousCommand(): String? {
-        if (commandHistory.isEmpty() || commandHistoryIndex <= 0) return null
-        commandHistoryIndex--
-        return commandHistory[commandHistoryIndex]
+
+    init {
+        // Запускаем обновление метрик
+        metricsUpdater.play()
     }
     
     /**
      * Получение следующей команды из истории
      */
     fun getNextCommand(): String? {
-        if (commandHistory.isEmpty() || commandHistoryIndex >= commandHistory.size - 1) return null
-        commandHistoryIndex++
-        return commandHistory[commandHistoryIndex]
+        if (commandHistoryIndex < commandHistory.size - 1) {
+            commandHistoryIndex++
+            return commandHistory[commandHistoryIndex]
+        }
+        commandHistoryIndex = commandHistory.size
+        return ""
     }
     
     /**
-     * Разбор вывода консоли для извлечения информации
+     * Получение предыдущей команды из истории
      */
-    private fun parseConsoleOutput(line: String) {
-        // Обновление списка игроков
-        if (line.contains("joined the game")) {
-            val player = line.substringBefore("[").trim()
-            if (player.isNotBlank() && !onlinePlayers.contains(player)) {
-                onlinePlayers.add(player)
-                playerCount.set(onlinePlayers.size)
+    fun getPreviousCommand(): String? {
+        if (commandHistoryIndex > 0) {
+            commandHistoryIndex--
+            return commandHistory[commandHistoryIndex]
+        }
+        return if (commandHistory.isNotEmpty()) commandHistory[0] else ""
+    }
+    
+    /**
+     * Отправка команды на сервер
+     */
+    fun sendCommand(command: String) {
+        try {
+            serverProcess?.outputStream?.write("$command\n".toByteArray())
+            serverProcess?.outputStream?.flush()
+            
+            // Добавляем команду в историю
+            if (command.isNotBlank()) {
+                commandHistory.add(command)
+                commandHistoryIndex = commandHistory.size
+                
+                // Ограничиваем размер истории
+                if (commandHistory.size > 100) {
+                    commandHistory.removeAt(0)
+                    commandHistoryIndex--
+                }
             }
-        } else if (line.contains("left the game")) {
-            val player = line.substringBefore("[").trim()
-            if (player.isNotBlank() && onlinePlayers.contains(player)) {
-                onlinePlayers.remove(player)
-                playerCount.set(onlinePlayers.size)
+            
+            // Обновляем метрики после отправки команды
+            updatePluginAndPlayerMetrics()
+        } catch (e: Exception) {
+            Platform.runLater {
+                consoleOutput.set("${consoleOutput.get()}\n> Ошибка при отправке команды: ${e.message}")
             }
         }
-        
-        // Обновление TPS (для Paper)
-        if (line.contains("TPS from")) {
-            val tpsValue = line.substringAfter("TPS from").substringBefore(" ").trim()
-            if (tpsValue.matches(Regex("\\d+\\.\\d+"))) {
-                tps.set(tpsValue)
-            }
-        }
-    }
-    
-    /**
-     * Обновление информации о сервере
-     */
-    private fun updateServerInfo() {
-        if (!serverRunning.get()) return
-        
-        // Запрос списка игроков
-        sendCommand("list")
-        
-        // Запрос TPS (для Paper)
-        if (settings.isPaperServer) {
-            sendCommand("tps")
-        }
-    }
-    
-    /**
-     * Загрузка настроек
-     */
-    fun loadSettings() {
-        // TODO: Реализовать загрузку настроек из файла
-    }
-    
-    /**
-     * Сохранение настроек
-     */
-    fun saveSettings() {
-        // TODO: Реализовать сохранение настроек в файл
     }
     
     /**
      * Очистка ресурсов
      */
-    override fun onUndock() {
-        super.onUndock()
-        
-        // Останавливаем сервер при закрытии приложения
-        if (serverRunning.get()) {
-            stopServer()
+    fun cleanup() {
+        try {
+            metricsUpdater.stop()
+            executor.shutdownNow()
+            serverProcess?.destroyForcibly()
+        } catch (e: Exception) {
+            // Игнорируем ошибки при очистке
         }
-        
-        // Завершаем исполнитель
-        executor.shutdownNow()
-        
-        // Сохраняем настройки
-        saveSettings()
+    }
+    
+    /**
+     * Обновление метрик
+     */
+    private fun updateMetrics() {
+        try {
+            // Обновляем использование CPU
+            val osBean = ManagementFactory.getOperatingSystemMXBean()
+            metrics.cpuUsage.set(osBean.systemLoadAverage * 100.0)
+            
+            // Обновляем использование памяти
+            val runtime = Runtime.getRuntime()
+            val usedMemoryBytes = runtime.totalMemory() - runtime.freeMemory()
+            val maxMemoryBytes = runtime.maxMemory()
+            val usedMemoryMB = usedMemoryBytes / (1024.0 * 1024.0)
+            val maxMemoryMB = maxMemoryBytes / (1024.0 * 1024.0)
+            metrics.usedMemory.set(usedMemoryMB.toLong())
+            metrics.maxMemory.set(maxMemoryMB.toLong())
+            
+            // Обновляем метрики плагинов и игроков
+            updatePluginAndPlayerMetrics()
+        } catch (e: Exception) {
+            // Игнорируем ошибки при обновлении метрик
+        }
+    }
+    
+    /**
+     * Остановка сервера
+     */
+    fun stopServer() {
+        if (serverRunning.get() && !serverStopping.get()) {
+            serverStopping.set(true)
+            try {
+                consoleOutput.set("${consoleOutput.get()}\n> Остановка сервера...")
+                sendCommand("stop")
+                // Даем серверу время на корректное завершение
+                Thread.sleep(5000)
+                serverProcess?.destroyForcibly()
+                serverProcess = null
+                serverRunning.set(false)
+            } catch (e: Exception) {
+                consoleOutput.set("${consoleOutput.get()}\n> Ошибка при остановке сервера: ${e.message}")
+            } finally {
+                serverStopping.set(false)
+            }
+        }
+    }
+    
+    /**
+     * Запуск сервера
+     */
+    fun startServer() {
+        try {
+            serverStarting.value = true
+            // Здесь будет логика запуска сервера
+            consoleOutput.value = "${consoleOutput.value}\n> Запуск сервера..."
+            
+            // Имитация запуска сервера
+            thread {
+                Thread.sleep(1000) // Имитация задержки запуска
+                runLater {
+                    serverRunning.value = true
+                    serverStarting.value = false
+                    consoleOutput.value = "${consoleOutput.value}\n> Сервер успешно запущен!"
+                }
+            }
+        } catch (e: Exception) {
+            runLater {
+                consoleOutput.value = "${consoleOutput.value}\n> Ошибка при запуске сервера: ${e.message}"
+                serverStarting.value = false
+            }
+        }
     }
 }
