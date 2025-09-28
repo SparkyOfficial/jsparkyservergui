@@ -1,9 +1,11 @@
 /* Основные цвета темы */
 .root {
-    -fx-base: #2b2b2b;
-    -fx-background: #2b2b2b;
-    -fx-control-inner-background: #3c3f41;
+    -fx-base: #1e1e2e;
+    -fx-background: #1e1e2e;
+    -fx-control-inner-background: #2a2a3a;
     -fx-text-fill: #e0e0e0;
+    -fx-font-family: 'Segoe UI', Arial, sans-serif;
+    -fx-font-size: 14px;
 }
 
 /* Стиль для текстовых полей */
@@ -17,30 +19,92 @@
 
 /* Стиль для кнопок */
 .button {
-    -fx-background-color: #4a4a4a;
-    -fx-text-fill: #e0e0e0;
-    -fx-border-radius: 3px;
-    -fx-padding: 5 10 5 10;
+    -fx-background-color: #4a4a6a;
+    -fx-text-fill: #ffffff;
+    -fx-border-radius: 5px;
+    -fx-padding: 8 16 8 16;
+    -fx-background-radius: 5px;
+    -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.2), 5, 0, 0, 2);
+    -fx-cursor: hand;
+    -fx-font-weight: 500;
 }
 
 .button:hover {
-    -fx-background-color: #5a5a5a;
+    -fx-background-color: #5a5a8a;
+    -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.3), 7, 0, 0, 3);
 }
 
 .button:disabled {
     -fx-opacity: 0.5;
+    -fx-effect: none;
+}
+
+.button-primary {
+    -fx-background-color: #6a5acd;
+    -fx-text-fill: white;
+}
+
+.button-primary:hover {
+    -fx-background-color: #7b68ee;
+}
+
+.button-danger {
+    -fx-background-color: #d32f2f;
+    -fx-text-fill: white;
+}
+
+.button-danger:hover {
+    -fx-background-color: #f44336;
 }
 
 /* Стиль для области консоли */
-.text-area {
-    -fx-background-color: #2b2b2b;
+.console {
+    -fx-background-color: #1a1a2a;
     -fx-text-fill: #e0e0e0;
-    -fx-font-family: 'Consolas', monospace;
-    -fx-font-size: 12px;
+    -fx-font-family: 'Consolas', 'Monaco', monospace;
+    -fx-font-size: 13px;
+    -fx-padding: 10px;
+}
+
+.text-area {
+    -fx-background-color: transparent;
+    -fx-text-fill: #e0e0e0;
+    -fx-font-family: 'Consolas', 'Monaco', monospace;
+    -fx-font-size: 13px;
+    -fx-padding: 0;
 }
 
 .text-area .content {
-    -fx-background-color: #2b2b2b;
+    -fx-background-color: #1a1a2a;
+    -fx-cursor: text;
+}
+
+.text-area .scroll-pane {
+    -fx-background-color: transparent;
+    -fx-hbar-policy: as-needed;
+    -fx-vbar-policy: as-needed;
+}
+
+/* Подсветка команд в консоли */
+.text {
+    -fx-fill: #e0e0e0;
+}
+
+.text-command {
+    -fx-fill: #4ec9b0;
+    -fx-font-weight: bold;
+}
+
+.text-error {
+    -fx-fill: #f44336;
+}
+
+.text-warning {
+    -fx-fill: #ffc107;
+}
+
+.text-info {
+    -fx-fill: #2196f3;
 }
 
 /* Стиль для скроллбара */
@@ -64,30 +128,84 @@
 
 /* Стиль для вкладок */
 .tab-pane {
-    -fx-background-color: #2b2b2b;
+    -fx-background-color: #1e1e2e;
+    -fx-tab-min-width: 100px;
+    -fx-tab-max-width: 200px;
+}
+
+.tab-pane .tab-header-area {
+    -fx-background-color: #1e1e2e;
+    -fx-padding: 5 10 0 10;
+}
+
+.tab-pane .tab-header-background {
+    -fx-background-color: #1e1e2e;
+    -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.2), 5, 0, 0, 2);
 }
 
 .tab {
-    -fx-background-color: #3c3f41;
+    -fx-background-color: #2a2a3a;
+    -fx-text-fill: #a0a0a0;
+    -fx-padding: 5 15 5 15;
+    -fx-background-radius: 5 5 0 0;
+    -fx-border-width: 0 0 3 0;
+    -fx-border-color: transparent;
+    -fx-cursor: hand;
+    -fx-font-weight: 500;
+}
+
+.tab:hover {
+    -fx-background-color: #3a3a4a;
     -fx-text-fill: #e0e0e0;
 }
 
 .tab:selected {
-    -fx-background-color: #4a4a4a;
+    -fx-background-color: #3a3a5a;
+    -fx-text-fill: #ffffff;
+    -fx-border-color: #6a5acd;
+}
+
+.tab .tab-label {
+    -fx-alignment: CENTER;
 }
 
 /* Стиль для контекстного меню */
 .context-menu {
-    -fx-background-color: #3c3f41;
+    -fx-background-color: #2a2a3a;
     -fx-text-fill: #e0e0e0;
+    -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.3), 10, 0, 0, 5);
+    -fx-padding: 5px 0;
+    -fx-background-radius: 5px;
 }
 
 .menu-item {
-    -fx-background-color: #3c3f41;
+    -fx-background-color: transparent;
+    -fx-padding: 5 20 5 10;
+    -fx-cursor: hand;
+}
+
+.menu-item .label {
+    -fx-text-fill: #e0e0e0;
+    -fx-font-size: 13px;
 }
 
 .menu-item:focused {
-    -fx-background-color: #4a4a4a;
+    -fx-background-color: #3a3a5a;
+}
+
+.menu-item:focused .label {
+    -fx-text-fill: #ffffff;
+}
+
+.menu-item .accelerator-text {
+    -fx-text-fill: #808080;
+}
+
+/* Стиль для разделителя в меню */
+.context-menu .separator:horizontal .line {
+    -fx-border-color: #3a3a4a;
+    -fx-border-width: 0 0 1 0;
+    -fx-padding: 3 0 3 0;
 }
 
 /* Стиль для полосы прокрутки */
